@@ -65,7 +65,6 @@ def traffic_light_sequence():
             time.sleep(1)
     g1.off()
     
-    # Traffic light 1 becomes red, traffic light 2 becomes green
     r1.on()
     r2.off()
     g2.on()
