@@ -32,6 +32,15 @@ SEGMENT_PATTERNS = {
 
 last_press_time = 0
 
+def set_traffic_light(light, color):
+    if light == 1:
+        GPIO.output(TL1_R, color == 'red')
+        GPIO.output(TL1_G, color == 'green')
+        GPIO.output(TL1_B, color == 'blue')
+    elif light == 2:
+        GPIO.output(TL2_R, color == 'red')
+        GPIO.output(TL2_G, color == 'green')
+        GPIO.output(TL2_B, color == 'blue')
 
 def display_number(number):
     for pin, value in zip(SEGMENT_PINS, SEGMENT_PATTERNS[number]):
@@ -62,20 +71,25 @@ def traffic_light_sequence():
     set_traffic_light(1, 'red')
     set_traffic_light(2, 'green')
 
+def button_callback(channel):
+    global last_press_time
+    current_time = time.time()
+    if current_time - last_press_time >= 20:
+        last_press_time = current_time
+        traffic_light_sequence()
+
+# Set up the interrupt
+GPIO.add_event_detect(BUTTON_PIN, GPIO.FALLING, callback=button_callback, bouncetime=200)
+
 # Initial state
 set_traffic_light(1, 'red')
 set_traffic_light(2, 'green')
 
-print("Traffic light system running (Polling method). Press Ctrl+C to exit.")
+print("Traffic light system running (Interrupt method). Press Ctrl+C to exit.")
 
 try:
     while True:
-        if not GPIO.input(BUTTON_PIN):
-            current_time = time.time()
-            if current_time - last_press_time >= 20:
-                last_press_time = current_time
-                traffic_light_sequence()
-        time.sleep(0.01)
+        time.sleep(0.1)
 except KeyboardInterrupt:
     print("Program stopped")
-GPIO.cleanup()
+    GPIO.cleanup()
