@@ -1,20 +1,20 @@
 import time
 from gpiozero import LED, Button
 
-# Traffic Light 1
+# t1
 r1 = LED(5)
 g1 = LED(6)
 b1 = LED(13)
 
-# Traffic Light 2
+# t2
 r2 = LED(16)
 g2 = LED(20)
 b2 = LED(21)
 
-# Button
+# button
 btn = Button(26)
 
-# 7-segment display
+# display
 a = LED(17)
 b = LED(4)
 c = LED(18)
@@ -23,7 +23,7 @@ e = LED(24)
 f = LED(27)
 g = LED(22)
 
-# 7-segment display patterns
+# display patterns
 SEGMENT_PATTERNS = {
     0: (1,1,1,1,1,1,0),
     1: (0,1,1,0,0,0,0),
@@ -49,13 +49,11 @@ def blink_light(light, times):
         time.sleep(0.5)
 
 def traffic_light_sequence():
-    # Traffic light 2 turns blue, blinks 3 times, then turns red
     b2.on()
     blink_light(b2, 3)
     r2.on()
     b2.off()
     
-    # Traffic light 1 becomes green and countdown starts
     g1.on()
     for i in range(9, -1, -1):
         display_number(i)
@@ -80,7 +78,6 @@ def button_pressed():
 
 btn.when_pressed = button_pressed
 
-# Initial state
 r1.on()
 g2.on()
 
