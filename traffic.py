@@ -1,29 +1,22 @@
+import RPi.GPIO as GPIO
 import time
-from gpiozero import LED, Button
 
-# t1
-r1 = LED(5)
-g1 = LED(6)
-b1 = LED(13)
+# GPIO setup
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
 
-# t2
-r2 = LED(16)
-g2 = LED(20)
-b2 = LED(21)
+# Pin definitions
+BUTTON_PIN = 26
+TL1_R, TL1_G, TL1_B = 5, 6, 13  # Traffic Light 1 pins
+TL2_R, TL2_G, TL2_B = 16, 20, 19  # Traffic Light 2 pins
+SEGMENT_PINS = [12, 4, 18, 23, 24, 27, 22]  # a, b, c, d, e, f, g
 
-# button
-btn = Button(26)
+# Setup pin modes
+GPIO.setup(BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+for pin in [TL1_R, TL1_G, TL1_B, TL2_R, TL2_G, TL2_B] + SEGMENT_PINS:
+    GPIO.setup(pin, GPIO.OUT)
 
-# display
-a = LED(17)
-b = LED(4)
-c = LED(18)
-d = LED(23)
-e = LED(24)
-f = LED(27)
-g = LED(22)
-
-# display patterns
+# 7-segment display patterns
 SEGMENT_PATTERNS = {
     0: (1,1,1,1,1,1,0),
     1: (0,1,1,0,0,0,0),
@@ -37,52 +30,61 @@ SEGMENT_PATTERNS = {
     9: (1,1,1,1,0,1,1)
 }
 
-def display_number(number):
-    segments = SEGMENT_PATTERNS[number]
-    a.value, b.value, c.value, d.value, e.value, f.value, g.value = segments
+last_press_time = 0
 
-def blink_light(light, times):
+def set_traffic_light(light, color):
+    if light == 1:
+        GPIO.output(TL1_R, color == 'red')
+        GPIO.output(TL1_G, color == 'green')
+        GPIO.output(TL1_B, color == 'blue')
+    elif light == 2:
+        GPIO.output(TL2_R, color == 'red')
+        GPIO.output(TL2_G, color == 'green')
+        GPIO.output(TL2_B, color == 'blue')
+
+def display_number(number):
+    for pin, value in zip(SEGMENT_PINS, SEGMENT_PATTERNS[number]):
+        GPIO.output(pin, value)
+
+def blink_light(light, color, times):
     for _ in range(times):
-        light.on()
+        set_traffic_light(light, color)
         time.sleep(0.5)
-        light.off()
+        set_traffic_light(light, 'off')
         time.sleep(0.5)
 
 def traffic_light_sequence():
-    b2.on()
-    blink_light(b2, 3)
-    r2.on()
-    b2.off()
+    # Traffic light 2 turns blue, blinks 3 times, then turns red
+    blink_light(2, 'blue', 3)
+    set_traffic_light(2, 'red')
     
-    g1.on()
+    # Traffic light 1 becomes green and countdown starts
+    set_traffic_light(1, 'green')
     for i in range(9, -1, -1):
         display_number(i)
         if i <= 4:
-            blink_light(b1, 1)
+            blink_light(1, 'blue', 1)
         else:
             time.sleep(1)
-    g1.off()
     
-    r1.on()
-    r2.off()
-    g2.on()
+    # Traffic light 1 becomes red, traffic light 2 becomes green
+    set_traffic_light(1, 'red')
+    set_traffic_light(2, 'green')
 
-last_press_time = 0
+# Initial state
+set_traffic_light(1, 'red')
+set_traffic_light(2, 'green')
 
-def button_pressed():
-    global last_press_time
-    current_time = time.time()
-    if current_time - last_press_time >= 20:
-        last_press_time = current_time
-        traffic_light_sequence()
-
-btn.when_pressed = button_pressed
-
-r1.on()
-g2.on()
+print("Traffic light system running (Polling method). Press Ctrl+C to exit.")
 
 try:
     while True:
-        time.sleep(0.1)
+        if not GPIO.input(BUTTON_PIN):
+            current_time = time.time()
+            if current_time - last_press_time >= 20:
+                last_press_time = current_time
+                traffic_light_sequence()
+        time.sleep(0.01)
 except KeyboardInterrupt:
     print("Program stopped")
+    GPIO.cleanup()
