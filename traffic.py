@@ -78,9 +78,6 @@ def button_callback(channel):
         last_press_time = current_time
         traffic_light_sequence()
 
-# Set up the interrupt
-GPIO.add_event_detect(BUTTON_PIN, GPIO.FALLING, callback=button_callback, bouncetime=200)
-
 # Initial state
 set_traffic_light(1, 'red')
 set_traffic_light(2, 'green')
@@ -88,8 +85,23 @@ set_traffic_light(2, 'green')
 print("Traffic light system running (Interrupt method). Press Ctrl+C to exit.")
 
 try:
+    # Remove any existing event detection on the button pin
+    GPIO.remove_event_detect(BUTTON_PIN)
+    
+    # Set up the interrupt with error handling
+    try:
+        GPIO.add_event_detect(BUTTON_PIN, GPIO.FALLING, callback=button_callback, bouncetime=200)
+        print("Interrupt set up successfully")
+    except Exception as e:
+        print(f"Error setting up interrupt: {e}")
+        GPIO.cleanup()
+        exit(1)
+
+    # Keep the program running
     while True:
         time.sleep(0.1)
+
 except KeyboardInterrupt:
     print("Program stopped")
+finally:
     GPIO.cleanup()
