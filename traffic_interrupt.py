@@ -56,11 +56,12 @@ def set_traffic_light(light, color):
         GPIO.output(TL2_G, color == 'green')
         GPIO.output(TL2_B, color == 'blue')
 
-#
+# uses zip and a for loop to combine the pin array with the pins that are supposed to be on
 def display_number(number):
     for pin, value in zip(SEGMENT_PINS, SEGMENT_PATTERNS[number]):
         GPIO.output(pin, value)
 
+# blinks light
 def blink_light(light, color, times):
     for _ in range(times):
         set_traffic_light(light, color)
@@ -68,13 +69,16 @@ def blink_light(light, color, times):
         set_traffic_light(light, 'off')
         time.sleep(0.5)
 
+# main function
 def traffic_light_sequence():
-    # Traffic light 2 turns blue, blinks 3 times, then turns red
+    # traffic light 2 turns blue, blinks 3 times, then turns red
     blink_light(2, 'blue', 3)
     set_traffic_light(2, 'red')
     
-    # Traffic light 1 becomes green and countdown starts
+    # traffic light 1 turns green
     set_traffic_light(1, 'green')
+    
+    # for loop from 9 to -1 non inclusive with steps of -1
     for i in range(9, -1, -1):
         display_number(i)
         if i <= 4:
@@ -82,10 +86,12 @@ def traffic_light_sequence():
         else:
             time.sleep(1)
     
-    # Traffic light 1 becomes red, traffic light 2 becomes green
+    # traffic light 1 turns red
+    # traffic light 2 turns green
     set_traffic_light(1, 'red')
     set_traffic_light(2, 'green')
 
+# this just makes sure that the button can only be pressed every 20 seconds, its weird structurre just makes it resistant to any errors that might come on startup
 def button_callback(channel):
     global last_press
     current_time = time.time()
@@ -93,18 +99,20 @@ def button_callback(channel):
         last_press = current_time
         traffic_light_sequence()
 
-# Set up the interrupt
+# set up the interrupt
 GPIO.add_event_detect(BUTTON_PIN, GPIO.FALLING, callback=button_callback, bouncetime=200)
 
-# Initial state
+# initial
 set_traffic_light(1, 'red')
 set_traffic_light(2, 'green')
 
-print("Traffic light system running (Interrupt method). Press Ctrl+C to exit.")
+# just lets me know its running
+print("traffic light system running interrupt method")
 
+# allows the progrma to be stopped with keyboard input
 try:
     while True:
         time.sleep(0.1)
 except KeyboardInterrupt:
-    print("Program stopped")
+    print("program stopped")
     GPIO.cleanup()
