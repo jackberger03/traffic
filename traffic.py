@@ -32,15 +32,6 @@ SEGMENT_PATTERNS = {
 
 last_press_time = 0
 
-def set_traffic_light(light, color):
-    if light == 1:
-        GPIO.output(TL1_R, color == 'red')
-        GPIO.output(TL1_G, color == 'green')
-        GPIO.output(TL1_B, color == 'blue')
-    elif light == 2:
-        GPIO.output(TL2_R, color == 'red')
-        GPIO.output(TL2_G, color == 'green')
-        GPIO.output(TL2_B, color == 'blue')
 
 def display_number(number):
     for pin, value in zip(SEGMENT_PINS, SEGMENT_PATTERNS[number]):
