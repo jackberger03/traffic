@@ -87,4 +87,4 @@ try:
         time.sleep(0.01)
 except KeyboardInterrupt:
     print("Program stopped")
-    GPIO.cleanup()
+GPIO.cleanup()
