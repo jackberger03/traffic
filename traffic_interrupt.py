@@ -5,18 +5,30 @@ import time
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
-# Pin definitions
+# pin definitions so that they can be easily changed according to the schematic
 BUTTON_PIN = 26
-TL1_R, TL1_G, TL1_B = 5, 6, 13  # Traffic Light 1 pins
-TL2_R, TL2_G, TL2_B = 16, 20, 19  # Traffic Light 2 pins
-SEGMENT_PINS = [12, 4, 18, 23, 24, 27, 22]  # a, b, c, d, e, f, g
 
-# Setup pin modes
+# traffic light 1 pins
+TL1_R = 5
+TL1_G = 6
+TL1_B = 13 
+
+# traffic light 2 pins
+TL2_R = 16
+TL2_G = 20
+TL2_B = 19
+
+# 7-segment display pins
+SEGMENT_PINS = [12, 4, 18, 23, 24, 27, 22]
+# a, b, c, d, e, f, g this corresponds to the locations on the display
+
+# this just initializes the pins in a for loop
 GPIO.setup(BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 for pin in [TL1_R, TL1_G, TL1_B, TL2_R, TL2_G, TL2_B] + SEGMENT_PINS:
     GPIO.setup(pin, GPIO.OUT)
 
 # 7-segment display patterns
+# this is just an array that makes it easier to transsalte gpio pins to real numbers also localizes them in case I make a mistake
 SEGMENT_PATTERNS = {
     0: (1,1,1,1,1,1,0),
     1: (0,1,1,0,0,0,0),
@@ -30,8 +42,10 @@ SEGMENT_PATTERNS = {
     9: (1,1,1,1,0,1,1)
 }
 
-last_press_time = 0
+# initialize to 0
+last_press = 0
 
+# this looks a little confusing but it just condenses a bunch of if statements and sets the color of the lights
 def set_traffic_light(light, color):
     if light == 1:
         GPIO.output(TL1_R, color == 'red')
@@ -42,6 +56,7 @@ def set_traffic_light(light, color):
         GPIO.output(TL2_G, color == 'green')
         GPIO.output(TL2_B, color == 'blue')
 
+#
 def display_number(number):
     for pin, value in zip(SEGMENT_PINS, SEGMENT_PATTERNS[number]):
         GPIO.output(pin, value)
@@ -72,10 +87,10 @@ def traffic_light_sequence():
     set_traffic_light(2, 'green')
 
 def button_callback(channel):
-    global last_press_time
+    global last_press
     current_time = time.time()
-    if current_time - last_press_time >= 20:
-        last_press_time = current_time
+    if current_time - last_press >= 20:
+        last_press = current_time
         traffic_light_sequence()
 
 # Set up the interrupt
