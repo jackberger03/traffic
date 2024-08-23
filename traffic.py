@@ -1,12 +1,20 @@
-from gpiozero import LED, Button
-from signal import pause
+import RPi.GPIO as GPIO
 import time
 
+# GPIO setup
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
+
 # Pin definitions
-button = Button(26)
-tl1_r, tl1_g, tl1_b = LED(5), LED(6), LED(13)  # Traffic Light 1
-tl2_r, tl2_g, tl2_b = LED(16), LED(20), LED(19)  # Traffic Light 2
-segments = [LED(pin) for pin in [12, 4, 18, 23, 24, 27, 22]]  # a, b, c, d, e, f, g
+BUTTON_PIN = 26
+TL1_R, TL1_G, TL1_B = 5, 6, 13  # Traffic Light 1 pins
+TL2_R, TL2_G, TL2_B = 16, 20, 19  # Traffic Light 2 pins
+SEGMENT_PINS = [12, 4, 18, 23, 24, 27, 22]  # a, b, c, d, e, f, g
+
+# Setup pin modes
+GPIO.setup(BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+for pin in [TL1_R, TL1_G, TL1_B, TL2_R, TL2_G, TL2_B] + SEGMENT_PINS:
+    GPIO.setup(pin, GPIO.OUT)
 
 # 7-segment display patterns
 SEGMENT_PATTERNS = {
@@ -26,13 +34,17 @@ last_press_time = 0
 
 def set_traffic_light(light, color):
     if light == 1:
-        tl1_r.value, tl1_g.value, tl1_b.value = color == 'red', color == 'green', color == 'blue'
+        GPIO.output(TL1_R, color == 'red')
+        GPIO.output(TL1_G, color == 'green')
+        GPIO.output(TL1_B, color == 'blue')
     elif light == 2:
-        tl2_r.value, tl2_g.value, tl2_b.value = color == 'red', color == 'green', color == 'blue'
+        GPIO.output(TL2_R, color == 'red')
+        GPIO.output(TL2_G, color == 'green')
+        GPIO.output(TL2_B, color == 'blue')
 
 def display_number(number):
-    for segment, value in zip(segments, SEGMENT_PATTERNS[number]):
-        segment.value = value
+    for pin, value in zip(SEGMENT_PINS, SEGMENT_PATTERNS[number]):
+        GPIO.output(pin, value)
 
 def blink_light(light, color, times):
     for _ in range(times):
@@ -59,23 +71,25 @@ def traffic_light_sequence():
     set_traffic_light(1, 'red')
     set_traffic_light(2, 'green')
 
-def button_pressed():
+def button_callback(channel):
     global last_press_time
     current_time = time.time()
     if current_time - last_press_time >= 20:
         last_press_time = current_time
         traffic_light_sequence()
 
-# Set up the button press event
-button.when_pressed = button_pressed
+# Set up the interrupt
+GPIO.add_event_detect(BUTTON_PIN, GPIO.FALLING, callback=button_callback, bouncetime=200)
 
 # Initial state
 set_traffic_light(1, 'red')
 set_traffic_light(2, 'green')
 
-print("Traffic light system running. Press Ctrl+C to exit.")
+print("Traffic light system running (Interrupt method). Press Ctrl+C to exit.")
 
 try:
-    pause()  # Keep the script running
+    while True:
+        time.sleep(0.1)
 except KeyboardInterrupt:
     print("Program stopped")
+    GPIO.cleanup()
