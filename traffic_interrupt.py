@@ -8,15 +8,6 @@ GPIO.setwarnings(False)
 # pin definitions so that they can be easily changed according to the schematic
 BUTTON_PIN = 26
 
-# traffic light 1 pins
-TL1_R = 5
-TL1_G = 6
-TL1_B = 13 
-
-# traffic light 2 pins
-TL2_R = 16
-TL2_G = 20
-TL2_B = 19
 
 # 7-segment display pins
 SEGMENT_PINS = [12, 4, 18, 23, 24, 27, 22]
