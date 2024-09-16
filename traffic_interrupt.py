@@ -107,3 +107,5 @@ try:
 except KeyboardInterrupt:
     print("program stopped")
     GPIO.cleanup()
+
+print("BRANCHO")
